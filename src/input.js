@@ -1,5 +1,5 @@
 let name = "Reem";
-let n='reem ;
+let n='reem';
 let a = 'It\'s a "beautiful" day';
 let b = "It's a beautiful day";
 let message = "abc \

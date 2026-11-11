@@ -115,6 +115,35 @@ ERRCHAR
     : .;
 
 
+fragment RegexFirstChar
+    : ~[/\\\r\n\u2028\u2029*]
+    | '\\' ~[\r\n\u2028\u2029]
+    ;
+
+fragment RegexChar
+    : ~[/\\\r\n\u2028\u2029]
+    | '\\' ~[\r\n\u2028\u2029]
+    | '[' RegexClassChar* ']'
+    ;
+
+fragment RegexClassChar
+    : ~[\]\\\r\n\u2028\u2029]
+    | '\\' ~[\r\n\u2028\u2029]
+    ;
+
+fragment RegexFlags
+    : [a-zA-Z_$]*
+    ;
+
+TEMPLATE_EXPR_START
+    : '${' {templateBraceDepth.push(0);} -> pushMode(DEFAULT_MODE)
+    ;
+
+REGEX_LITERAL
+    : '/' RegexFirstChar RegexChar* '/' RegexFlags
+    ;
+
+
 fragment HEX_DIGIT
     : [0-9a-fA-F]
     ;
