@@ -80,7 +80,7 @@ INCREMENT : '++';
 DECREMENT : '--';
 COLON : ':';
 QUESTION : '?';
-ASSIGN      : '=';
+ASSIGN : '=' -> pushMode(REGEX_ALLOWED_MODE);
 PLUS_ASSIGN     : '+=';
 MINUS_ASSIGN    : '-=';
 MULT_ASSIGN     : '*=';
@@ -115,8 +115,12 @@ ERRCHAR
     : .;
 
 
+REGEX_LITERAL
+    : '/' RegexFirstChar RegexChar* '/' RegexFlags
+    ;
+
 fragment RegexFirstChar
-    : ~[/\\\r\n\u2028\u2029*]
+    : ~[/\\\r\n\u2028\u2029]
     | '\\' ~[\r\n\u2028\u2029]
     ;
 
@@ -132,17 +136,8 @@ fragment RegexClassChar
     ;
 
 fragment RegexFlags
-    : [a-zA-Z_$]*
+    : [dgimsuvy]*
     ;
-
-TEMPLATE_EXPR_START
-    : '${' {templateBraceDepth.push(0);} -> pushMode(DEFAULT_MODE)
-    ;
-
-REGEX_LITERAL
-    : '/' RegexFirstChar RegexChar* '/' RegexFlags
-    ;
-
 
 fragment HEX_DIGIT
     : [0-9a-fA-F]
@@ -168,3 +163,55 @@ fragment ESCAPE_SEQUENCE
         : '0'
         | [1-9] [0-9]* ('_' [0-9]+)*
         ;
+        mode REGEX_ALLOWED_MODE;
+
+        REGEX_MODE_WS
+            : [ \t\r\n]+ -> skip
+            ;
+
+
+        REGEX_MODE_LITERAL
+            : '/' RegexFirstChar RegexChar* '/' RegexFlags
+              -> type(REGEX_LITERAL), popMode
+            ;
+
+
+        REGEX_MODE_HEX
+            : '0' [xX] HexNumbers BigInt?
+              -> type(HEX_NUMBERS), popMode
+            ;
+
+        REGEX_MODE_OCT
+            : '0' [oO] OctNumber BigInt?
+              -> type(OCT_NUMBERS), popMode
+            ;
+
+        REGEX_MODE_BIN
+            : '0' [bB] BinarNumber BigInt?
+              -> type(BINAR_NUMBERS), popMode
+            ;
+
+        REGEX_MODE_FLOAT
+            : (DecimalInteger '.' DecDigits? Exponent?
+            | '.' DecDigits Exponent?
+            | DecimalInteger Exponent)
+              -> type(FLOAT_NIMBERS), popMode
+            ;
+
+        REGEX_MODE_DEC
+            : DecimalInteger BigInt?
+              -> type(DEC_NUMBERS), popMode
+            ;
+
+
+        REGEX_MODE_IDENTIFIER
+            : [a-zA-Z_$] [a-zA-Z0-9_$]*
+              -> type(IDENTIFIER), popMode
+            ;
+
+
+        REGEX_MODE_STRING
+            : ('"' (LINE_CONTINUATION | ESCAPE_SEQUENCE | ~["\\\r\n\u2028\u2029])* '"'
+            | '\'' (LINE_CONTINUATION | ESCAPE_SEQUENCE | ~['\\\r\n\u2028\u2029])* '\'')
+              -> type(STRING_LITERAL), popMode
+            ;
